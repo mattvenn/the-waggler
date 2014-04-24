@@ -53,7 +53,7 @@ if raspi:
 class driver:
     def __init__(self):
         #verbose output
-        self.verbose = True
+        self.verbose = False
 
         freq = 200 #hz
         self.pwm = GPIO.PWM(not_oe, freq)
