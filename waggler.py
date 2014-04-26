@@ -3,6 +3,9 @@ import RPi.GPIO as GPIO
 import random
 import driver
 import pickle
+import cam
+import twitter
+from sounds import Sound
 
 score = 0
 up = 13
@@ -38,6 +41,8 @@ def inc_score(channel):
         last = channel
 
 def main():
+    cam_thread=cam.CamThread()
+    thread_started = False
     counter = 10
     start_time = time.time()
     attach_int()
@@ -47,10 +52,21 @@ def main():
         output = "%d.%03d" % (cur_time,score)
 #        print(output)
         leds.update(output)
+        if cur_time <= 1 and not thread_started:
+            print("start capture thread")
+            cam_thread.start()
+            thread_started = True
+
+    cam_thread.join()
     detach_int()
 
 
 if __name__ == '__main__':
+
+    win_sound = Sound('win.wav')
+    win_sound.play()
+    end_sound = Sound('game_over.wav')
+    start_sound = Sound('start.wav')
     #load high score
     #pickle.dump(0,open("score.pk",'wb'))
     try:
@@ -73,25 +89,36 @@ if __name__ == '__main__':
         dot_time = 0.5
         #dot intro
         leds.update(' .   ')
+        start_sound.play()
         leds.set_pwm(max_pwm)
         time.sleep(dot_time)
         leds.update(' . .  ')
+        start_sound.play()
         time.sleep(dot_time)
         leds.update(' . . . ')
+        start_sound.play()
         time.sleep(dot_time)
         leds.update(' . . . . ')
+        start_sound.play()
         time.sleep(dot_time)
 
+        """ run the game """
         main()  
-        leds.update("%4d" % score )
-        time.sleep(5)
-        leds.fade(max_pwm,0,length)
-        time.sleep(1)
 
         print("score = %d" % score)
+        leds.update("%4d" % score )
+
         if score > high_score:
+            win_sound.play()
             #disco mode?
             print("new high score %d" % score)
+            message = "I set a new high score on the waggler! %d" % score
             high_score = score
             pickle.dump(score,open("score.pk",'wb'))
+        else:
+            end_sound.play()
+            message = "I got %d on the waggler!" % score
     
+        twitter.send_tweet(score,message)
+        leds.fade(max_pwm,0,length)
+        time.sleep(1)
