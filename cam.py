@@ -6,6 +6,8 @@ class CamThread(threading.Thread):
         super(CamThread,self).__init__()
         self.camera = picamera.PiCamera()
         self.camera.resolution = (1024,768)
+#        self.camera.meter_mode = 'average'
+        self.camera.ISO = 300
 
     def run(self):
         self.camera.capture('mugshot.jpg')

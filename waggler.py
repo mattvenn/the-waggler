@@ -40,8 +40,7 @@ def inc_score(channel):
         score += 1
         last = channel
 
-def main():
-    cam_thread=cam.CamThread()
+def main(cam_thread):
     thread_started = False
     counter = 10
     start_time = time.time()
@@ -49,7 +48,7 @@ def main():
     while time.time() < start_time + counter:
         time.sleep(0.01)
         cur_time = counter - (time.time() - start_time)
-        output = "%d.%03d" % (cur_time,score)
+        output = "%d.%3d" % (cur_time,score)
 #        print(output)
         leds.update(output)
         if cur_time <= 1 and not thread_started:
@@ -86,39 +85,44 @@ if __name__ == '__main__':
         print("wait for button")
         GPIO.wait_for_edge(butt,GPIO.FALLING)
         leds.fade(max_pwm,0,length)
+        cam_thread=cam.CamThread()
         dot_time = 0.5
         #dot intro
-        leds.update(' .   ')
+        leds.update('   4')
         start_sound.play()
         leds.set_pwm(max_pwm)
         time.sleep(dot_time)
-        leds.update(' . .  ')
+        leds.update('   3')
         start_sound.play()
         time.sleep(dot_time)
-        leds.update(' . . . ')
+        leds.update('   2')
         start_sound.play()
         time.sleep(dot_time)
-        leds.update(' . . . . ')
+        leds.update('   1')
         start_sound.play()
         time.sleep(dot_time)
 
         """ run the game """
-        main()  
+        main(cam_thread)  
 
         print("score = %d" % score)
         leds.update("%4d" % score )
+
 
         if score > high_score:
             win_sound.play()
             #disco mode?
             print("new high score %d" % score)
-            message = "I set a new high score on the waggler! %d" % score
+            message = "I set a new high score on the waggler! %d #makerfaireuk" % score
             high_score = score
             pickle.dump(score,open("score.pk",'wb'))
         else:
             end_sound.play()
-            message = "I got %d on the waggler!" % score
+            message = "I got %d on the waggler! #makerfaireuk" % score
     
-        twitter.send_tweet(score,message)
+        tweet_thread=twitter.TweetThread(message)
+        tweet_thread.start()
+
+        time.sleep(4)
         leds.fade(max_pwm,0,length)
         time.sleep(1)
